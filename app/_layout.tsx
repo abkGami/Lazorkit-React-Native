@@ -1,3 +1,7 @@
+// CRITICAL: Polyfills must be imported first before any other code
+import "../polyfills";
+
+import { LazorKitProvider } from "@lazorkit/wallet-mobile-adapter";
 import {
   DarkTheme,
   DefaultTheme,
@@ -5,45 +9,37 @@ import {
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import React from "react";
 import "react-native-reanimated";
 
-import { WalletProvider } from "@/context/WalletContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 /**
  * Root Layout
  *
- * Main app entry point with navigation and context providers
- * Sets up wallet provider, theme, and deep link handling for Lazorkit
+ * Main app entry point with navigation and LazorKitProvider
+ * Sets up wallet SDK, theme, and deep linking
  */
-
-export const unstable_settings = {
-  anchor: "(tabs)",
-};
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <WalletProvider network="devnet">
+    <LazorKitProvider
+      rpcUrl="https://api.devnet.solana.com"
+      portalUrl="https://portal.lazor.sh"
+      configPaymaster={{
+        paymasterUrl: "https://kora.devnet.lazorkit.com",
+      }}
+    >
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{}}>
-          <Stack.Screen
-            name="(tabs)"
-            options={{
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen
-            name="modal"
-            options={{
-              presentation: "modal",
-              title: "Modal",
-            }}
-          />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+          <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>
-    </WalletProvider>
+    </LazorKitProvider>
   );
 }

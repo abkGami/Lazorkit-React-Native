@@ -6,7 +6,9 @@
  */
 
 import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useState } from "react";
+import { useWallet } from "@lazorkit/wallet-mobile-adapter";
+import { Connection, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -18,8 +20,20 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useWallet } from "../context/WalletContext";
 import { formatNumber, truncateAddress } from "../utils/helpers";
+import { ReceiveModal } from "./ReceiveModal";
+import { SendTokensModal } from "./SendTokensModal";
+
+interface Transaction {
+  id: string;
+  signature: string;
+  type: "send" | "receive" | "swap" | "billing";
+  amount: number;
+  token: string;
+  recipient?: string;
+  timestamp: number;
+  status: "pending" | "confirmed" | "failed";
+}
 
 /**
  * WalletDashboard Component
@@ -27,18 +41,51 @@ import { formatNumber, truncateAddress } from "../utils/helpers";
  * Complete wallet interface with balance, transactions, and action buttons
  */
 export const WalletDashboard: React.FC = () => {
-  const { walletAddress, transactions, disconnectWallet, isConnected } =
-    useWallet();
+  const { smartWalletPubkey, isConnected, disconnect } = useWallet();
+  const [balance, setBalance] = useState<number | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sendModalVisible, setSendModalVisible] = useState(false);
+  const [receiveModalVisible, setReceiveModalVisible] = useState(false);
+
+  const walletAddress = smartWalletPubkey?.toBase58() || null;
+
+  /**
+   * Fetch wallet balance
+   */
+  const fetchBalance = useCallback(async () => {
+    if (!smartWalletPubkey) return;
+
+    try {
+      const connection = new Connection(
+        "https://api.devnet.solana.com",
+        "confirmed"
+      );
+      const bal = await connection.getBalance(smartWalletPubkey);
+      setBalance(bal / LAMPORTS_PER_SOL);
+    } catch (err) {
+      console.error("Failed to fetch balance:", err);
+    }
+  }, [smartWalletPubkey]);
+
+  /**
+   * Fetch balance when wallet is connected
+   */
+  useEffect(() => {
+    if (isConnected && smartWalletPubkey) {
+      fetchBalance();
+    }
+  }, [isConnected, smartWalletPubkey, fetchBalance]);
 
   /**
    * Handle wallet refresh
    */
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await fetchBalance();
+    await new Promise((resolve) => setTimeout(resolve, 500));
     setIsRefreshing(false);
-  }, []);
+  }, [fetchBalance]);
 
   /**
    * Handle logout
@@ -49,18 +96,73 @@ export const WalletDashboard: React.FC = () => {
       {
         text: "Disconnect",
         onPress: async () => {
-          await disconnectWallet();
+          await disconnect({
+            onSuccess: () => {
+              console.log("Wallet disconnected successfully");
+            },
+            onFail: (err) => {
+              console.error("Failed to disconnect:", err);
+              Alert.alert("Error", "Failed to disconnect wallet");
+            },
+          });
         },
         style: "destructive",
       },
     ]);
-  }, [disconnectWallet]);
+  }, [disconnect]);
 
   /**
-   * Calculate total USDC balance from mock data
+   * Handle Send action
    */
-  const calculateBalance = () => {
-    return 1000; // Mock balance
+  const handleSend = useCallback(() => {
+    setSendModalVisible(true);
+  }, []);
+
+  /**
+   * Handle Receive action
+   */
+  const handleReceive = useCallback(() => {
+    setReceiveModalVisible(true);
+  }, []);
+
+  /**
+   * Handle Swap action
+   */
+  const handleSwap = useCallback(() => {
+    Alert.alert(
+      "Swap Tokens",
+      "Token swap functionality coming soon! This will allow you to swap between different tokens using Lazorkit's gasless transactions.",
+      [{ text: "OK" }]
+    );
+  }, []);
+
+  /**
+   * Handle Pay action
+   */
+  const handlePay = useCallback(() => {
+    Alert.alert(
+      "Pay with Crypto",
+      "Payment functionality coming soon! This will allow you to pay merchants directly with crypto using Lazorkit.",
+      [{ text: "OK" }]
+    );
+  }, []);
+
+  /**
+   * Handle successful send
+   */
+  const handleSendSuccess = useCallback(
+    (signature: string) => {
+      console.log("Transaction successful:", signature);
+      handleRefresh(); // Refresh the dashboard to show new transaction
+    },
+    [handleRefresh]
+  );
+
+  /**
+   * Get display balance
+   */
+  const getDisplayBalance = () => {
+    return balance !== null ? balance : 0;
   };
 
   /**
@@ -161,7 +263,7 @@ export const WalletDashboard: React.FC = () => {
     );
   }
 
-  const balance = calculateBalance();
+  const displayBalance = getDisplayBalance();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -189,8 +291,14 @@ export const WalletDashboard: React.FC = () => {
         <View style={styles.balanceCard}>
           <View style={styles.balanceContent}>
             <Text style={styles.balanceLabel}>Total Balance</Text>
-            <Text style={styles.balanceAmount}>${formatNumber(balance)}</Text>
-            <Text style={styles.balanceInUSDC}>{balance} USDC</Text>
+            <Text style={styles.balanceAmount}>
+              {formatNumber(displayBalance)} SOL
+            </Text>
+            <Text style={styles.balanceInUSDC}>
+              {balance !== null
+                ? `≈ $${(displayBalance * 100).toFixed(2)}`
+                : "Loading..."}
+            </Text>
           </View>
           <View style={styles.balanceIcon}>
             <Ionicons name="wallet" size={48} color="#6366F1" />
@@ -202,19 +310,19 @@ export const WalletDashboard: React.FC = () => {
           <QuickActionButton
             icon="arrow-forward"
             label="Send"
-            onPress={() => {}}
+            onPress={handleSend}
           />
           <QuickActionButton
             icon="arrow-back"
             label="Receive"
-            onPress={() => {}}
+            onPress={handleReceive}
           />
           <QuickActionButton
             icon="swap-horizontal"
             label="Swap"
-            onPress={() => {}}
+            onPress={handleSwap}
           />
-          <QuickActionButton icon="card" label="Pay" onPress={() => {}} />
+          <QuickActionButton icon="card" label="Pay" onPress={handlePay} />
         </View>
 
         {/* Features Section */}
@@ -227,7 +335,7 @@ export const WalletDashboard: React.FC = () => {
             description="Send transactions with sponsored fees"
           />
           <Feature
-            icon="fingerprint"
+            icon="finger-print"
             title="Biometric Security"
             description="Secured by FaceID or TouchID"
           />
@@ -258,6 +366,17 @@ export const WalletDashboard: React.FC = () => {
           )}
         </View>
       </ScrollView>
+
+      {/* Modals */}
+      <SendTokensModal
+        visible={sendModalVisible}
+        onClose={() => setSendModalVisible(false)}
+        onSuccess={handleSendSuccess}
+      />
+      <ReceiveModal
+        visible={receiveModalVisible}
+        onClose={() => setReceiveModalVisible(false)}
+      />
     </SafeAreaView>
   );
 };

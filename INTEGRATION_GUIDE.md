@@ -134,27 +134,27 @@ Scenario 2: Multiple Devices
 │  └────────────────────────────────────────────────┘ │
 │  ┌────────────────────────────────────────────────┐ │
 │  │  WalletContext (State Management)              │ │
-│  │  - walletAddress, isConnected, transactions   │ │
+│  │  - walletAddress, isConnected, transactions    │ │
 │  │  - connectWallet(), sendTransaction()          │ │
 │  └────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────┘
            ↓
 ┌─────────────────────────────────────────────────────┐
-│  Lazorkit SDK (@lazorkit/wallet-mobile-adapter)    │
-│  - Passkey generation & signing                    │
-│  - Smart wallet account management                 │
-│  - Transaction building & simulation               │
+│  Lazorkit SDK (@lazorkit/wallet-mobile-adapter)     │
+│  - Passkey generation & signing                     │
+│  - Smart wallet account management                  │
+│  - Transaction building & simulation                │
 └─────────────────────────────────────────────────────┘
            ↓
 ┌─────────────────────────────────────────────────────┐
 │  Backend Services                                   │
-│  ┌──────────────┐ ┌──────────────┐ ┌────────────┐ │
-│  │ Lazorkit     │ │ Paymaster    │ │ Solana     │ │
-│  │ Portal       │ │ Service      │ │ RPC        │ │
-│  │              │ │              │ │            │ │
-│  │ - Key mgmt   │ │ - Fee sponsor│ │ - Mainnet  │ │
-│  │ - Simulation │ │ - Validation │ │ - Devnet   │ │
-│  └──────────────┘ └──────────────┘ └────────────┘ │
+│  ┌──────────────┐ ┌──────────────┐ ┌────────────┐   │
+│  │ Lazorkit     │ │ Paymaster    │ │ Solana     │   │
+│  │ Portal       │ │ Service      │ │ RPC        │   │
+│  │              │ │              │ │            │   │
+│  │ - Key mgmt   │ │ - Fee sponsor│ │ - Mainnet  │   │
+│  │ - Simulation │ │ - Validation │ │ - Devnet   │   │
+│  └──────────────┘ └──────────────┘ └────────────┘   │
 └─────────────────────────────────────────────────────┘
            ↓
 ┌─────────────────────────────────────────────────────┐

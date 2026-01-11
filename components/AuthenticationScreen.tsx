@@ -12,6 +12,7 @@
  */
 
 import { Ionicons } from "@expo/vector-icons";
+import { useWallet } from "@lazorkit/wallet-mobile-adapter";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -23,7 +24,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useWallet } from "../context/WalletContext";
+
+const APP_SCHEME = "lazorkit://";
 
 interface AuthState {
   step: "welcome" | "biometric" | "creating" | "success";
@@ -38,7 +40,7 @@ interface AuthState {
  * Uses device biometrics (FaceID/TouchID) for secure, passwordless login.
  */
 export const AuthenticationScreen: React.FC = () => {
-  const { connectWallet, isLoading, error } = useWallet();
+  const { connect } = useWallet();
   const [authState, setAuthState] = useState<AuthState>({
     step: "welcome",
     isProcessing: false,
@@ -46,6 +48,7 @@ export const AuthenticationScreen: React.FC = () => {
   });
 
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
+  const opacityAnim = React.useRef(new Animated.Value(1)).current;
 
   /**
    * Animate button press
@@ -66,6 +69,30 @@ export const AuthenticationScreen: React.FC = () => {
   };
 
   /**
+   * Start biometric icon animation
+   */
+  React.useEffect(() => {
+    if (authState.step === "biometric") {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(opacityAnim, {
+            toValue: 0.5,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      opacityAnim.setValue(1);
+    }
+  }, [authState.step, opacityAnim]);
+
+  /**
    * Handle passkey creation and wallet connection
    */
   const handleCreatePasskey = useCallback(async () => {
@@ -80,17 +107,21 @@ export const AuthenticationScreen: React.FC = () => {
       // Step 2: Creating wallet
       setAuthState((prev) => ({ ...prev, step: "creating" }));
 
-      // Connect wallet using Lazorkit SDK
-      await connectWallet({
-        redirectUrl: "lazorkit://wallet/connected",
+      // Connect wallet using Lazorkit SDK with proper callbacks
+      await connect({
+        redirectUrl: APP_SCHEME,
+        onSuccess: (wallet) => {
+          console.log("Wallet connected successfully:", wallet.smartWallet);
+          setAuthState((prev) => ({
+            ...prev,
+            step: "success",
+            isProcessing: false,
+          }));
+        },
+        onFail: (err) => {
+          throw err;
+        },
       });
-
-      // Step 3: Success
-      setAuthState((prev) => ({
-        ...prev,
-        step: "success",
-        isProcessing: false,
-      }));
     } catch (err) {
       const errorMsg =
         err instanceof Error ? err.message : "Authentication failed";
@@ -103,7 +134,7 @@ export const AuthenticationScreen: React.FC = () => {
 
       Alert.alert("Authentication Failed", errorMsg);
     }
-  }, [connectWallet]);
+  }, [connect]);
 
   /**
    * Handle restore from existing passkey
@@ -116,15 +147,20 @@ export const AuthenticationScreen: React.FC = () => {
       setAuthState((prev) => ({ ...prev, step: "biometric" }));
       await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate biometric
 
-      await connectWallet({
-        redirectUrl: "lazorkit://wallet/restored",
+      await connect({
+        redirectUrl: APP_SCHEME,
+        onSuccess: (wallet) => {
+          console.log("Wallet restored successfully:", wallet.smartWallet);
+          setAuthState((prev) => ({
+            ...prev,
+            step: "success",
+            isProcessing: false,
+          }));
+        },
+        onFail: (err) => {
+          throw err;
+        },
       });
-
-      setAuthState((prev) => ({
-        ...prev,
-        step: "success",
-        isProcessing: false,
-      }));
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Restore failed";
       setAuthState((prev) => ({
@@ -136,7 +172,7 @@ export const AuthenticationScreen: React.FC = () => {
 
       Alert.alert("Restore Failed", errorMsg);
     }
-  }, [connectWallet]);
+  }, [connect]);
 
   const renderContent = () => {
     switch (authState.step) {
@@ -150,7 +186,7 @@ export const AuthenticationScreen: React.FC = () => {
 
             <View style={styles.featureContainer}>
               <Feature
-                icon="fingerprint"
+                icon="finger-print"
                 title="Biometric Security"
                 description="Secured by FaceID, TouchID, or Windows Hello"
               />
@@ -176,10 +212,10 @@ export const AuthenticationScreen: React.FC = () => {
                 <TouchableOpacity
                   style={styles.primaryButton}
                   onPress={handleCreatePasskey}
-                  disabled={isLoading || authState.isProcessing}
+                  disabled={authState.isProcessing}
                   activeOpacity={0.8}
                 >
-                  {isLoading || authState.isProcessing ? (
+                  {authState.isProcessing ? (
                     <ActivityIndicator color="#FFFFFF" size="large" />
                   ) : (
                     <>
@@ -195,7 +231,7 @@ export const AuthenticationScreen: React.FC = () => {
               <TouchableOpacity
                 style={styles.secondaryButton}
                 onPress={handleRestoreWallet}
-                disabled={isLoading || authState.isProcessing}
+                disabled={authState.isProcessing}
                 activeOpacity={0.7}
               >
                 <Ionicons name="key" size={20} color="#6366F1" />
@@ -220,15 +256,7 @@ export const AuthenticationScreen: React.FC = () => {
                 style={[
                   styles.biometricIcon,
                   {
-                    opacity: Animated.loop(
-                      Animated.sequence([
-                        Animated.timing(new Animated.Value(1), {
-                          toValue: 0.5,
-                          duration: 500,
-                          useNativeDriver: true,
-                        }),
-                      ])
-                    ) as any,
+                    opacity: opacityAnim,
                   },
                 ]}
               >

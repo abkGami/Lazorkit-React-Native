@@ -13,6 +13,8 @@
  */
 
 import { Ionicons } from "@expo/vector-icons";
+import { useWallet } from "@lazorkit/wallet-mobile-adapter";
+import { LAMPORTS_PER_SOL, PublicKey, SystemProgram } from "@solana/web3.js";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -26,7 +28,19 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Transaction, useWallet } from "../context/WalletContext";
+
+const APP_SCHEME = "lazorkit://wallet";
+
+interface Transaction {
+  id: string;
+  signature: string;
+  type: "send" | "receive" | "swap" | "billing";
+  amount: number;
+  token: string;
+  recipient?: string;
+  timestamp: number;
+  status: "pending" | "confirmed" | "failed";
+}
 
 interface TransferState {
   step: "form" | "review" | "processing" | "success";
@@ -46,7 +60,8 @@ const MOCK_USDC_BALANCE = 1000;
  * Complete flow for sending gasless USDC transactions
  */
 export const GaslessTransferScreen: React.FC = () => {
-  const { walletAddress, sendTransaction, isLoading } = useWallet();
+  const { smartWalletPubkey, signAndSendTransaction } = useWallet();
+  const walletAddress = smartWalletPubkey?.toBase58() || null;
   const [transferState, setTransferState] = useState<TransferState>({
     step: "form",
     recipient: "",
@@ -56,6 +71,7 @@ export const GaslessTransferScreen: React.FC = () => {
   const [lastTransaction, setLastTransaction] = useState<Transaction | null>(
     null
   );
+  const [isLoading, setIsLoading] = useState(false);
 
   /**
    * Validate recipient address format (basic Solana address validation)
@@ -117,15 +133,35 @@ export const GaslessTransferScreen: React.FC = () => {
     }
 
     setTransferState((prev) => ({ ...prev, step: "processing", error: null }));
+    setIsLoading(true);
     Keyboard.dismiss();
 
     try {
-      // Send gasless transaction
-      const txSignature = await sendTransaction(
-        transferState.recipient,
-        parseFloat(transferState.amount),
-        "USDC",
-        { redirectUrl: "lazorkit://transfer/complete" }
+      // Create transfer instruction
+      const transferInstruction = SystemProgram.transfer({
+        fromPubkey: smartWalletPubkey!,
+        toPubkey: new PublicKey(transferState.recipient),
+        lamports: parseFloat(transferState.amount) * LAMPORTS_PER_SOL,
+      });
+
+      // Send gasless transaction using Lazorkit SDK
+      const txSignature = await signAndSendTransaction(
+        {
+          instructions: [transferInstruction],
+          transactionOptions: {
+            feeToken: "USDC", // Pay fees with USDC
+            clusterSimulation: "devnet",
+          },
+        },
+        {
+          redirectUrl: `${APP_SCHEME}/transfer-complete`,
+          onSuccess: (sig) => {
+            console.log("Gasless transaction successful:", sig);
+          },
+          onFail: (err) => {
+            throw err;
+          },
+        }
       );
 
       setLastTransaction({
@@ -158,8 +194,10 @@ export const GaslessTransferScreen: React.FC = () => {
         error: errorMsg,
       }));
       Alert.alert("Transfer Failed", errorMsg);
+    } finally {
+      setIsLoading(false);
     }
-  }, [walletAddress, sendTransaction, transferState]);
+  }, [walletAddress, signAndSendTransaction, transferState]);
 
   /**
    * Render form step

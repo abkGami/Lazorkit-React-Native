@@ -3,10 +3,45 @@
  *
  * Lazorkit SDK integration utilities
  * Handles smart wallet operations, transaction signing, and Paymaster integration
+ *
+ * Direct store initialization without provider to avoid React Native compatibility issues
  */
 
+import { useWalletStore } from "@lazorkit/wallet-mobile-adapter";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 import { getPaymasterUrl } from "./config";
+
+/**
+ * Initialize Lazorkit store configuration
+ * Call this once at app startup
+ */
+export const initLazorkitSDK = (network: "devnet" | "mainnet" = "devnet") => {
+  const rpcUrl =
+    network === "devnet"
+      ? "https://api.devnet.solana.com"
+      : "https://api.mainnet-beta.solana.com";
+
+  const portalUrl = "https://portal.lazor.sh";
+  const paymasterUrl =
+    network === "devnet"
+      ? "https://kora.devnet.lazorkit.com"
+      : "https://kora.mainnet.lazorkit.com";
+
+  const connection = new Connection(rpcUrl, "confirmed");
+
+  // Initialize wallet store config
+  const store = useWalletStore.getState();
+  store.setConfig({
+    rpcUrl,
+    portalUrl,
+    configPaymaster: {
+      paymasterUrl,
+    },
+  });
+  store.setConnection(connection);
+
+  return useWalletStore;
+};
 
 /**
  * Smart Wallet interface representing an on-chain Lazorkit wallet
