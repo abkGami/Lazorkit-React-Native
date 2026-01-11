@@ -53,6 +53,7 @@ export default function RootLayout() {
 ```
 
 **What happens:**
+
 1. `LazorKitProvider` initializes the wallet SDK
 2. Configures RPC connection to Solana network
 3. Sets up Paymaster for gasless transactions
@@ -105,11 +106,9 @@ export const AuthenticationScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <Ionicons name="wallet-outline" size={80} color="#007AFF" />
-      
+
       <Text style={styles.title}>Create Your Wallet</Text>
-      <Text style={styles.subtitle}>
-        Secured by your fingerprint or face
-      </Text>
+      <Text style={styles.subtitle}>Secured by your fingerprint or face</Text>
 
       <TouchableOpacity
         style={styles.button}
@@ -127,8 +126,8 @@ export const AuthenticationScreen: React.FC = () => {
       </TouchableOpacity>
 
       <Text style={styles.note}>
-        Your wallet is secured by your device's biometric authentication.
-        No passwords or seed phrases required.
+        Your wallet is secured by your device's biometric authentication. No
+        passwords or seed phrases required.
       </Text>
     </View>
   );
@@ -247,7 +246,7 @@ export const WalletDashboard: React.FC = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Your Wallet</Text>
-      
+
       <TouchableOpacity onPress={copyAddress} style={styles.addressCard}>
         <Text style={styles.address}>
           {wallet?.smartWallet?.slice(0, 8)}...{wallet?.smartWallet?.slice(-8)}
@@ -265,12 +264,12 @@ export const WalletDashboard: React.FC = () => {
 
 ### Common Errors & Solutions
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| "Biometric not available" | Device has no biometrics | Enable FaceID/TouchID in Settings |
-| "User cancelled" | User dismissed biometric prompt | Show retry button |
-| "Network error" | No internet connection | Check connectivity and retry |
-| "Unmatched route" | Deep link not configured | Add `+not-found.tsx` catch-all route |
+| Error                     | Cause                           | Solution                             |
+| ------------------------- | ------------------------------- | ------------------------------------ |
+| "Biometric not available" | Device has no biometrics        | Enable FaceID/TouchID in Settings    |
+| "User cancelled"          | User dismissed biometric prompt | Show retry button                    |
+| "Network error"           | No internet connection          | Check connectivity and retry         |
+| "Unmatched route"         | Deep link not configured        | Add `+not-found.tsx` catch-all route |
 
 ---
 
@@ -315,7 +314,7 @@ import {
 
 export const GaslessTransferScreen: React.FC = () => {
   const { signAndExecuteTransaction, wallet } = useWallet();
-  
+
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -394,11 +393,11 @@ const validateInput = (): boolean => {
 Execute the gasless transfer:
 
 ```typescript
-import { 
-  Connection, 
-  PublicKey, 
+import {
+  Connection,
+  PublicKey,
   Transaction,
-  TransactionInstruction 
+  TransactionInstruction,
 } from "@solana/web3.js";
 import {
   createTransferInstruction,
@@ -479,20 +478,22 @@ const [txSignature, setTxSignature] = useState<string | null>(null);
 setTxSignature(signature);
 
 // Display link to explorer
-{txSignature && (
-  <View style={styles.successCard}>
-    <Text style={styles.successText}>✅ Transaction Confirmed!</Text>
-    <TouchableOpacity
-      onPress={() =>
-        Linking.openURL(
-          `https://explorer.solana.com/tx/${txSignature}?cluster=devnet`
-        )
-      }
-    >
-      <Text style={styles.explorerLink}>View on Explorer →</Text>
-    </TouchableOpacity>
-  </View>
-)}
+{
+  txSignature && (
+    <View style={styles.successCard}>
+      <Text style={styles.successText}>✅ Transaction Confirmed!</Text>
+      <TouchableOpacity
+        onPress={() =>
+          Linking.openURL(
+            `https://explorer.solana.com/tx/${txSignature}?cluster=devnet`
+          )
+        }
+      >
+        <Text style={styles.explorerLink}>View on Explorer →</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
 ```
 
 ### How Paymaster Works (Behind the Scenes)
@@ -606,14 +607,9 @@ const handleRestoreWallet = async () => {
 };
 
 // Add restore button to UI
-<TouchableOpacity
-  style={styles.secondaryButton}
-  onPress={handleRestoreWallet}
->
-  <Text style={styles.secondaryButtonText}>
-    Restore Existing Wallet
-  </Text>
-</TouchableOpacity>
+<TouchableOpacity style={styles.secondaryButton} onPress={handleRestoreWallet}>
+  <Text style={styles.secondaryButtonText}>Restore Existing Wallet</Text>
+</TouchableOpacity>;
 ```
 
 ### Step 3: Persist Additional Data
@@ -638,7 +634,10 @@ const loadTransactionHistory = async (): Promise<Transaction[]> => {
 };
 
 // Save user preferences
-const savePreferences = async (prefs: { theme: string; notifications: boolean }) => {
+const savePreferences = async (prefs: {
+  theme: string;
+  notifications: boolean;
+}) => {
   await SecureStore.setItemAsync("user_preferences", JSON.stringify(prefs));
 };
 
@@ -728,6 +727,7 @@ You've learned how to:
 3. **Persist sessions** across devices using passkey sync
 
 For more information:
+
 - [Lazorkit Documentation](https://docs.lazorkit.com)
 - [GitHub Repository](https://github.com/lazor-kit)
 - [Solana Documentation](https://docs.solana.com)

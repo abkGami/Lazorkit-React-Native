@@ -14,6 +14,7 @@ This example app showcases how to build a modern Solana wallet using Lazorkit SD
 ### What is Lazorkit?
 
 Lazorkit is a Solana SDK that enables:
+
 - **Passkeys**: Hardware-backed credentials stored in device Secure Enclave
 - **Gasless Transactions**: Paymaster service sponsors network fees
 - **Smart Wallets**: PDA-based accounts with programmable logic
@@ -204,12 +205,12 @@ npm run ios
 
 ### Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Crypto errors | Ensure `polyfills.ts` is imported first in `_layout.tsx` |
-| Deep link not working | Check `scheme` in `app.json` matches redirect URL |
-| Build fails | Run `npx expo prebuild --clean` and rebuild |
-| Biometric not available | Enable FaceID/TouchID in device settings |
+| Issue                   | Solution                                                 |
+| ----------------------- | -------------------------------------------------------- |
+| Crypto errors           | Ensure `polyfills.ts` is imported first in `_layout.tsx` |
+| Deep link not working   | Check `scheme` in `app.json` matches redirect URL        |
+| Build fails             | Run `npx expo prebuild --clean` and rebuild              |
+| Biometric not available | Enable FaceID/TouchID in device settings                 |
 
 ---
 
@@ -257,7 +258,7 @@ function SendButton() {
       transaction: buildTransferTransaction(recipient, amount),
       redirectUrl: "lazorkit://",
     });
-    
+
     console.log("Transaction sent:", signature);
   };
 
@@ -293,17 +294,17 @@ For detailed step-by-step guides, see [TUTORIALS.md](TUTORIALS.md):
 
 ### LazorKitProvider Props
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `rpcUrl` | `string` | Solana RPC endpoint |
-| `portalUrl` | `string` | Lazorkit portal for key management |
+| Prop                           | Type     | Description                                |
+| ------------------------------ | -------- | ------------------------------------------ |
+| `rpcUrl`                       | `string` | Solana RPC endpoint                        |
+| `portalUrl`                    | `string` | Lazorkit portal for key management         |
 | `configPaymaster.paymasterUrl` | `string` | Paymaster service for gasless transactions |
 
 ### Network Endpoints
 
-| Network | RPC URL | Paymaster |
-|---------|---------|-----------|
-| Devnet | `https://api.devnet.solana.com` | `https://kora.devnet.lazorkit.com` |
+| Network | RPC URL                               | Paymaster                           |
+| ------- | ------------------------------------- | ----------------------------------- |
+| Devnet  | `https://api.devnet.solana.com`       | `https://kora.devnet.lazorkit.com`  |
 | Mainnet | `https://api.mainnet-beta.solana.com` | Contact Lazorkit for mainnet access |
 
 ---
